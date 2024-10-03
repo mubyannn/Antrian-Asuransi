@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Antrian</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dongle&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, #003366, #007acc);
+            color: white;
+            font-family: 'Dongle', sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header img {
+            width: 120px;
+        }
+        .btn {
+            border-radius: 25px;
+        }
+    </style>
+</head>
+<body>
+    <tbody id="activeQueue">
+        <!-- Data antrian aktif akan ditambahkan di sini -->
+    </tbody>
+    
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyCVgifzEDaco8dLsAYbdO8s5YTZd516XrQ",
+          authDomain: "antrian-pelanggan.firebaseapp.com",
+          databaseURL: "https://antrian-pelanggan-default-rtdb.firebaseio.com",
+          projectId: "antrian-pelanggan",
+          storageBucket: "antrian-pelanggan.appspot.com",
+          messagingSenderId: "797610374660",
+          appId: "1:797610374660:web:b8afe0c1f43975feb46751",
+          measurementId: "G-M3PHBTR46M"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+      </script>
+
+<div class="container">
+    <div class="header">
+        <img src="Garda Oto.png" alt="Logo Asuransi Astra">
+        <h1>Admin Antrian Asuransi Astra</h1>
+    </div>
+
+    <div id="loginSection" class="login-form">
+        <h2>Login Admin</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" class="form-control" id="username" value="asuransiastra" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" class="form-control" id="password" value="gardaoto123" required>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">Login</button>
+        </form>
+        <div id="loginMessage" class="text-danger mt-2"></div>
+    </div>
+
+    <div id="adminSection" style="display: none;">
+        <button class="btn btn-danger mb-3" id="logoutButton">Logout</button>
+        <h2 class="mt-5">Antrian Aktif</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Plat Nomor</th>
+                    <th>Tanggal Booking</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="activeQueue">
+                <!-- Data antrian aktif akan ditambahkan di sini -->
+            </tbody>
+        </table>
+
+        <h2 class="mt-5">Antrian Selesai</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Plat Nomor</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="completedQueue">
+                <!-- Data antrian selesai akan ditambahkan di sini -->
+            </tbody>
+        </table>
+        
+        <button class="btn btn-success" id="generateSpreadsheet">Generate to Spreadsheet</button>
+    </div>
+</div>
+
+<script>
+    let queueStatus = JSON.parse(localStorage.getItem('queueStatus')) || []; // Ambil data dari localStorage
+
+document.getElementById('loginForm').onsubmit = function(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    // Validasi username dan password
+    if (username === 'asuransiastra' && password === 'gardaoto123') {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminSection').style.display = 'block';
+        // Reset form
+        document.getElementById('loginForm').reset();
+        updateActiveQueue();
+    } else {
+        document.getElementById('loginMessage').innerText = 'Username atau password salah.';
+    }
+};
+
+// Fungsi untuk logout
+document.getElementById('logoutButton').onclick = function() {
+    window.location.href = 'index.html'; // Alihkan pengguna ke index.html setelah logout
+};
+
+function updateActiveQueue() {
+    const activeQueueBody = document.getElementById('activeQueue');
+    activeQueueBody.innerHTML = ''; // Kosongkan tabel
+
+    queueStatus.forEach((queue, index) => {
+        const row = `<tr>
+            <td>${queue.name}</td>
+            <td>${queue.plate}</td>
+            <td>${queue.bookingDate}</td> <!-- Tampilkan tanggal booking -->
+            <td>${queue.status}</td>
+            <td>
+                <button class="btn btn-info" onclick="processDocuments(${index})">Proses Dokumen</button>
+                <button class="btn btn-warning" onclick="checkVehicle(${index})">Proses Cek Kendaraan</button>
+                <button class="btn btn-secondary" onclick="issueSPK(${index})">Proses Penerbitan SPK</button>
+                <button class="btn btn-success" onclick="completeQueue(${index})">Selesai</button>
+            </td>
+        </tr>`;
+        activeQueueBody.innerHTML += row;
+    });
+}
+
+function processDocuments(index) {
+    queueStatus[index].status = 'Dokumen Diproses';
+    updateLocalStorage();
+    alert(`Dokumen untuk ${queueStatus[index].name} dengan plat ${queueStatus[index].plate} telah diproses.`);
+    updateActiveQueue();
+}
+
+function checkVehicle(index) {
+    queueStatus[index].status = 'Cek Kendaraan';
+    updateLocalStorage();
+    alert(`Cek kendaraan untuk ${queueStatus[index].name} dengan plat ${queueStatus[index].plate} telah dilakukan.`);
+    updateActiveQueue();
+}
+
+function issueSPK(index) {
+    queueStatus[index].status = 'SPK Diterbitkan';
+    updateLocalStorage();
+    alert(`Penerbitan SPK untuk ${queueStatus[index].name} dengan plat ${queueStatus[index].plate} telah dilakukan.`);
+    updateActiveQueue();
+}
+
+function completeQueue(index) {
+    const completedQueueBody = document.getElementById('completedQueue');
+    const completedRow = `<tr>
+        <td>${queueStatus[index].name}</td>
+        <td>${queueStatus[index].plate}</td>
+        <td>Selesai</td>
+    </tr>`;
+    completedQueueBody.innerHTML += completedRow;
+
+    // Hapus dari antrian aktif
+    queueStatus.splice(index, 1); // Menghapus antrian dari array
+    updateLocalStorage(); // Update localStorage
+    updateActiveQueue(); // Update tampilan antrian aktif
+}
+
+function updateLocalStorage() {
+    localStorage.setItem('queueStatus', JSON.stringify(queueStatus));
+}
+document.getElementById('generateSpreadsheet').onclick = function() {
+        generateSpreadsheet();
+    };
+
+    function generateSpreadsheet() {
+        database.ref('queues').once('value', (snapshot) => {
+            const queueStatus = snapshot.val();
+            const data = [];
+
+            data.push(['Nama', 'Plat Nomor', 'Nomor Handphone', 'Tanggal Booking', 'Status']);
+
+            for (const key in queueStatus) {
+                const queue = queueStatus[key];
+                data.push([queue.name, queue.plate, queue.phone, queue.bookingDate, queue.status]);
+            }
+
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Antrian');
+
+            XLSX.writeFile(wb, 'Antrian_Asuransi_Astra.xlsx');
+        });
+    }
+
+    // Memulai pembaruan status antrian
+    updateQueueStatus();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</body>
+</html>

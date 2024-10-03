@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antrian Asuransi Astra</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dongle&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to right, #003366, #007acc);
+            color: white;
+            font-family: 'Dongle', sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header img {
+            width: 120px;
+        }
+        .form-control, .btn {
+            border-radius: 25px;
+        }
+        .table {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            .header img {
+                width: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+<tbody id="activeQueue">
+    <!-- Data antrian aktif akan ditambahkan di sini -->
+</tbody>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-analytics.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyCVgifzEDaco8dLsAYbdO8s5YTZd516XrQ",
+          authDomain: "antrian-pelanggan.firebaseapp.com",
+          databaseURL: "https://antrian-pelanggan-default-rtdb.firebaseio.com",
+          projectId: "antrian-pelanggan",
+          storageBucket: "antrian-pelanggan.appspot.com",
+          messagingSenderId: "797610374660",
+          appId: "1:797610374660:web:b8afe0c1f43975feb46751",
+          measurementId: "G-M3PHBTR46M"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+      </script>
+
+<div class="container">
+    <div class="header">
+        <img src="Garda Oto.png" alt="Logo Asuransi Astra">
+        <h1>Form Antrian Asuransi Astra</h1>
+    </div>
+    <form id="registrationForm">
+        <div class="form-group">
+            <label for="name">Nama:</label>
+            <input type="text" class="form-control" id="name" required>
+        </div>
+        <div class="form-group">
+            <label for="plate">Plat Nomor Kendaraan:</label>
+            <input type="text" class="form-control" id="plate" required>
+        </div>
+        <div class="form-group">
+            <label for="phone">Nomor Handphone/WhatsApp:</label>
+            <input type="text" class="form-control" id="phone" required>
+        </div>
+        <div class="form-group">
+            <label for="bookingDate">Tanggal Booking:</label>
+            <input type="date" class="form-control" id="bookingDate" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Registrasi</button>
+    </form>
+
+    <h2 class="mt-5">Status Antrian</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nama</th>
+                <th>Plat Nomor</th>
+                <th>Tanggal Booking</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="queueStatus">
+            <!-- Data status antrian akan ditambahkan di sini -->
+        </tbody>
+    </table>
+
+    <a href="admin.html" class="btn btn-secondary btn-block mt-3">Login Admin</a>
+</div>
+
+<script>
+    const queueStatus = JSON.parse(localStorage.getItem('queueStatus')) || [];
+
+    document.getElementById('registrationForm').onsubmit = function(event) {
+        event.preventDefault();
+
+        const name = document.getElementById('name').value;
+        const plate = document.getElementById('plate').value;
+        const phone = document.getElementById('phone').value;
+        const bookingDate = document.getElementById('bookingDate').value;
+
+        queueStatus.push({ name, plate, status: 'Sedang Diproses', bookingDate });
+        localStorage.setItem('queueStatus', JSON.stringify(queueStatus));
+
+        updateQueueStatus();
+        document.getElementById('registrationForm').reset();
+    };
+
+    function updateQueueStatus() {
+        const queueStatusBody = document.getElementById('queueStatus');
+        queueStatusBody.innerHTML = '';
+
+        queueStatus.forEach(queue => {
+            const row = `<tr>
+                <td>${queue.name}</td>
+                <td>${queue.plate}</td>
+                <td>${queue.bookingDate}</td>
+                <td>${queue.status}</td>
+            </tr>`;
+            queueStatusBody.innerHTML += row;
+        });
+    }
+
+    updateQueueStatus();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</body>
+</html>
